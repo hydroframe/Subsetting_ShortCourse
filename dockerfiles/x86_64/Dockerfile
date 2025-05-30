@@ -1,0 +1,180 @@
+FROM --platform=linux/amd64 quay.io/jupyter/datascience-notebook
+
+SHELL ["/bin/bash", "+o", "pipefail", "-c"]
+
+# Non interactive mode
+ENV DEBIAN_FRONTEND noninteractive
+
+USER root
+# Fetch the latest definitions of packages
+RUN apt-get update && \
+    ln -fs /usr/share/zoneinfo/America/New_York /etc/localtime && \
+    apt-get install -y tzdata && \
+    dpkg-reconfigure --frontend noninteractive tzdata && \
+    apt-get install -y \
+        build-essential \
+        curl \
+        libcurl4 \
+        git \
+        vim \
+        gfortran \
+        libopenblas-dev \
+        liblapack-dev \
+        openssh-client \
+        openssh-server \
+        openmpi-bin \
+        libopenmpi-dev \
+        python3 \
+        python3-pip \
+        python3-venv \
+        tcl-dev \
+        tk-dev
+
+USER jovyan
+WORKDIR /home/jovyan/
+ENV BASE_PATH /home/jovyan/
+
+RUN mkdir -p                              \
+    $BASE_PATH/parflow/build               \
+    $BASE_PATH/parflow/dependencies/cmake   \
+    $BASE_PATH/parflow/dependencies/silo-src \
+    $BASE_PATH/parflow/dependencies/hdf5-src  \
+    $BASE_PATH/parflow/dependencies/hypre-src  \
+    $BASE_PATH/parflow/dependencies/netcdf-src
+
+# -----------------------------------------------------------------------------
+# Setup CMake 3.1   8.2
+# -----------------------------------------------------------------------------
+
+ARG CMAKE_URL=https://cmake.org/files/LatestRelease/cmake-3.29.0-linux-x86_64.tar.gz
+
+RUN cd $BASE_PATH/parflow/dependencies/cmake && \
+    curl -L $CMAKE_URL | tar --strip-components=1 -xzv
+
+ENV CMAKE $BASE_PATH/parflow/dependencies/cmake/bin/cmake
+ENV CTEST $BASE_PATH/parflow/dependencies/cmake/bin/ctest
+
+# -----------------------------------------------------------------------------
+# Install HDF5
+# -----------------------------------------------------------------------------
+
+ARG HDF5_URL=https://support.hdfgroup.org/ftp/HDF5/releases/hdf5-1.12/hdf5-1.12.0/src/hdf5-1.12.0.tar.gz
+
+ENV HDF5_DIR /opt/hdf5
+
+WORKDIR $BASE_PATH/parflow/dependencies/hdf5-src
+RUN curl -L $HDF5_URL | tar --strip-components=1 -xzv && \
+    CC=mpicc ./configure \
+      --prefix=$HDF5_DIR \
+      --enable-parallel && \
+    make
+
+USER root
+RUN make install
+USER jovyan
+
+# -----------------------------------------------------------------------------
+# Install NetCDF
+# -----------------------------------------------------------------------------
+
+ARG NETCDF_URL=https://github.com/Unidata/netcdf-c/archive/v4.7.4.tar.gz
+
+ENV NETCDF_DIR /opt/netcdf
+
+WORKDIR $BASE_PATH/parflow/dependencies/netcdf-src
+RUN curl -L $NETCDF_URL | tar --strip-components=1 -xzv && \
+    CC=mpicc CPPFLAGS=-I$HDF5_DIR/include LDFLAGS=-L$HDF5_DIR/lib \
+    ./configure --disable-shared --disable-dap --prefix=${NETCDF_DIR} && \
+    make
+
+USER root
+RUN make install
+USER jovyan
+
+# -----------------------------------------------------------------------------
+# Install SILO
+# -----------------------------------------------------------------------------
+
+#ARG SILO_URL=https://wci.llnl.gov/sites/wci/files/2021-01/silo-4.10.2.tgz
+
+#ENV SILO_DIR /opt/silo
+
+#WORKDIR $BASE_PATH/parflow/dependencies/silo-src
+#RUN curl -L $SILO_URL | tar --strip-components=1 -xzv && \
+#    ./configure  --prefix=$SILO_DIR --disable-silex --disable-hzip --disable-fpzip && \
+#    make
+
+#USER root
+#RUN make install
+#USER jovyan
+
+
+# -----------------------------------------------------------------------------
+# Install Hypre
+# -----------------------------------------------------------------------------
+
+ARG HYPRE_VERSION=v2.19.0
+
+ENV HYPRE_DIR /opt/hypre
+
+WORKDIR $BASE_PATH/parflow/dependencies/hypre-src
+RUN git clone https://github.com/hypre-space/hypre.git --single-branch --branch $HYPRE_VERSION
+
+WORKDIR $BASE_PATH/parflow/dependencies/hypre-src/hypre/src
+RUN ./configure --prefix=$HYPRE_DIR --with-MPI
+
+USER root
+RUN make install
+USER jovyan
+
+
+# -----------------------------------------------------------------------------
+# Install Parflow
+# -----------------------------------------------------------------------------
+
+#COPY --chown=ubuntu:ubuntu . $BASE_PATH/parflow/src
+#RUN pip3 install -r $BASE_PATH/parflow/src/pftools/python/requirements_all.txt
+
+
+# ARG PARFLOW_VERSION=master
+# ARG PARFLOW_GIT_URL=
+# RUN git clone                           \
+#     --recursive --single-branch          \
+#     --branch $PARFLOW_VERSION             \
+#     $PARFLOW_GIT_URL                       \
+#     $BASE_PATH/parflow/src
+
+RUN git clone -b master --depth 1 --single-branch https://github.com/parflow/parflow.git $BASE_PATH/parflow/src
+
+RUN $CMAKE                     \
+    -S $BASE_PATH/parflow/src   \
+    -B $BASE_PATH/parflow/build  \
+    -D CMAKE_BUILD_TYPE=Release   \
+    -D HDF5_ROOT=$HDF5_DIR         \
+    -D PARFLOW_ENABLE_HDF5=TRUE     \
+    -D HYPRE_ROOT=$HYPRE_DIR         \
+    -D PARFLOW_ENABLE_HYPRE=TRUE      \
+    -D PARFLOW_ENABLE_SILO=TRUE        \
+    -D SILO_ROOT=$SILO_DIR              \
+    -D PARFLOW_HAVE_CLM=TRUE             \
+    -D PARFLOW_ENABLE_PYTHON=TRUE         \
+    -D PARFLOW_ENABLE_TIMING=TRUE          \
+    -D PARFLOW_AMPS_LAYER=mpi1              \
+    -D PARFLOW_AMPS_SEQUENTIAL_IO=TRUE       \
+    -D PARFLOW_ENABLE_NETCDF=TRUE             \
+    -D NETCDF_DIR=$NETCDF_DIR                  \     
+    -D CURL_LIBRARY=/usr/lib/x86_64-linux-gnu/libcurl.so.4
+
+RUN $CMAKE --build $BASE_PATH/parflow/build
+
+USER root
+RUN $CMAKE --install $BASE_PATH/parflow/build --prefix /opt/parflow
+USER jovyan
+
+RUN pip3 install subsettools
+
+ENV PARFLOW_DIR /opt/parflow/
+ENV LD_LIBRARY_PATH=/opt/parflow/lib:$LD_LIBRARY_PATH
+ENV LD_LIBRARY_PATH=/opt/hypre/lib:$LD_LIBRARY_PATH
+ENV LD_LIBRARY_PATH=/usr/include/:$LD_LIBRARY_PATH
+WORKDIR /home/jovyan
