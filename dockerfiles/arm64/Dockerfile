@@ -113,12 +113,10 @@ USER jovyan
 # Install Hypre
 # -----------------------------------------------------------------------------
 
-ARG HYPRE_VERSION=v2.19.0
-
 ENV HYPRE_DIR /opt/hypre
 
 WORKDIR $BASE_PATH/parflow/dependencies/hypre-src
-RUN git clone https://github.com/hypre-space/hypre.git --single-branch --branch $HYPRE_VERSION
+RUN git clone https://github.com/hypre-space/hypre.git --single-branch --branch master
 
 WORKDIR $BASE_PATH/parflow/dependencies/hypre-src/hypre/src
 RUN ./configure --prefix=$HYPRE_DIR --with-MPI
