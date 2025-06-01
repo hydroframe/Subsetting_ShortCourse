@@ -167,7 +167,8 @@ USER root
 RUN $CMAKE --install $BASE_PATH/parflow/build --prefix /opt/parflow
 USER jovyan
 
-RUN conda install conda-forge::libgdal
+RUN conda install -c conda-forge mamba && \
+    mamba install -c conda-forge libgdal
 RUN pip3 install subsettools
 
 ENV PARFLOW_DIR /opt/parflow/
