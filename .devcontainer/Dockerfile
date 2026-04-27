@@ -13,4 +13,5 @@ RUN pip install --upgrade pip \
     && pip install jupyter ipykernel
 
 # Ensure the kernel is registered
-RUN python -m ipykernel install --user --name python --display-name "short_course"
+RUN python -m ipykernel install --user --name short_course --display-name "Python (short_course)"
+
