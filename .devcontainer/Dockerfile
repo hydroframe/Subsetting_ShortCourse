@@ -2,7 +2,7 @@
 FROM mcr.microsoft.com/devcontainers/python:3.11
 
 # Set working directory
-WORKDIR /workspaces/${REPO_NAME}
+WORKDIR /workspaces
 
 # Copy requirements
 COPY requirements.txt /tmp/requirements.txt
