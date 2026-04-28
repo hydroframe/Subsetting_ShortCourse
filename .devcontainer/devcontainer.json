@@ -13,6 +13,5 @@
             ]
         }
     },
-    "postCreateCommand": "python -m ipykernel install --user --name short_course --display-name 'Python (short_course)'",
     "remoteUser": "vscode"
 }

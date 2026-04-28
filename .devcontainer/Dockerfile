@@ -9,9 +9,4 @@ COPY requirements.txt /tmp/requirements.txt
 
 # Install Python dependencies
 RUN pip install --upgrade pip \
-    && pip install -r /tmp/requirements.txt \
-    && pip install jupyter ipykernel
-
-# Ensure the kernel is registered
-RUN python -m ipykernel install --user --name short_course --display-name "Python (short_course)"
-
+    && pip install -r /tmp/requirements.txt
