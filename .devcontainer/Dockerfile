@@ -46,7 +46,7 @@ RUN mkdir -p                              \
 # Setup CMake 3.1   8.2
 # -----------------------------------------------------------------------------
 
-ARG CMAKE_URL=https://cmake.org/files/LatestRelease/cmake-3.29.0-linux-x86_64.tar.gz
+ARG CMAKE_URL=https://cmake.org/files/v3.29/cmake-3.29.0-linux-x86_64.tar.gz
 
 RUN cd $BASE_PATH/parflow/dependencies/cmake && \
     curl -L $CMAKE_URL | tar --strip-components=1 -xzv
