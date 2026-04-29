@@ -166,9 +166,8 @@ RUN $CMAKE                     \
     -D CMAKE_EXE_LINKER_FLAGS="-Wl,--no-as-needed -L$HDF5_DIR/lib -lhdf5_hl -lhdf5 -ldl -lz -lm -lmvec" \
     -D CURL_LIBRARY=/usr/lib/x86_64-linux-gnu/libcurl.so.4
 
-RUN $CMAKE --build $BASE_PATH/parflow/build
-
 USER root
+RUN $CMAKE --build $BASE_PATH/parflow/build
 RUN $CMAKE --install $BASE_PATH/parflow/build --prefix /opt/parflow
 USER jovyan
 
