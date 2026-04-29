@@ -1,0 +1,8 @@
+{
+  "name": "Subsetting ShortCourse",
+  "build": {
+    "dockerfile": "Dockerfile",
+    "context": ".."
+  },
+  "postCreateCommand": "python -m ipykernel install --user --name subsetting-shortcourse --display-name \"Python (Subsetting ShortCourse)\""
+}
