@@ -1,11 +1,11 @@
-FROM --platform=linux/amd64 quay.io/jupyter/datascience-notebook
+ARG BASE_IMAGE=ubuntu:20.04
+FROM ${BASE_IMAGE}
 
 SHELL ["/bin/bash", "+o", "pipefail", "-c"]
 
 # Non interactive mode
-ENV DEBIAN_FRONTEND noninteractive
+ENV DEBIAN_FRONTEND=noninteractive
 
-USER root
 # Fetch the latest definitions of packages
 RUN apt-get update && \
     ln -fs /usr/share/zoneinfo/America/New_York /etc/localtime && \
@@ -28,11 +28,15 @@ RUN apt-get update && \
         python3-pip \
         python3-venv \
         tcl-dev \
-        tk-dev
+        tk-dev && \
+    rm -rf /var/lib/apt/lists/*
 
-USER jovyan
-WORKDIR /home/jovyan/
-ENV BASE_PATH /home/jovyan/
+RUN groupadd -g 1000 ubuntu && \
+    useradd -u 1000 -g ubuntu -m -N -s /bin/bash ubuntu
+
+USER ubuntu
+WORKDIR /home/ubuntu/
+ENV BASE_PATH=/home/ubuntu/
 
 RUN mkdir -p                              \
     $BASE_PATH/parflow/build               \
@@ -43,7 +47,7 @@ RUN mkdir -p                              \
     $BASE_PATH/parflow/dependencies/netcdf-src
 
 # -----------------------------------------------------------------------------
-# Setup CMake 3.1   8.2
+# Setup CMake
 # -----------------------------------------------------------------------------
 
 ARG CMAKE_URL=https://cmake.org/files/v3.29/cmake-3.29.0-linux-x86_64.tar.gz
@@ -51,8 +55,8 @@ ARG CMAKE_URL=https://cmake.org/files/v3.29/cmake-3.29.0-linux-x86_64.tar.gz
 RUN cd $BASE_PATH/parflow/dependencies/cmake && \
     curl -L $CMAKE_URL | tar --strip-components=1 -xzv
 
-ENV CMAKE $BASE_PATH/parflow/dependencies/cmake/bin/cmake
-ENV CTEST $BASE_PATH/parflow/dependencies/cmake/bin/ctest
+ENV CMAKE=$BASE_PATH/parflow/dependencies/cmake/bin/cmake
+ENV CTEST=$BASE_PATH/parflow/dependencies/cmake/bin/ctest
 
 # -----------------------------------------------------------------------------
 # Install HDF5
@@ -60,7 +64,7 @@ ENV CTEST $BASE_PATH/parflow/dependencies/cmake/bin/ctest
 
 ARG HDF5_URL=https://support.hdfgroup.org/ftp/HDF5/releases/hdf5-1.12/hdf5-1.12.0/src/hdf5-1.12.0.tar.gz
 
-ENV HDF5_DIR /opt/hdf5
+ENV HDF5_DIR=/opt/hdf5
 
 WORKDIR $BASE_PATH/parflow/dependencies/hdf5-src
 RUN curl -L $HDF5_URL | tar --strip-components=1 -xzv && \
@@ -71,7 +75,7 @@ RUN curl -L $HDF5_URL | tar --strip-components=1 -xzv && \
 
 USER root
 RUN make install
-USER jovyan
+USER ubuntu
 
 # -----------------------------------------------------------------------------
 # Install NetCDF
@@ -79,7 +83,7 @@ USER jovyan
 
 ARG NETCDF_URL=https://github.com/Unidata/netcdf-c/archive/v4.7.4.tar.gz
 
-ENV NETCDF_DIR /opt/netcdf
+ENV NETCDF_DIR=/opt/netcdf
 
 WORKDIR $BASE_PATH/parflow/dependencies/netcdf-src
 RUN curl -L $NETCDF_URL | tar --strip-components=1 -xzv && \
@@ -89,25 +93,7 @@ RUN curl -L $NETCDF_URL | tar --strip-components=1 -xzv && \
 
 USER root
 RUN make install
-USER jovyan
-
-# -----------------------------------------------------------------------------
-# Install SILO
-# -----------------------------------------------------------------------------
-
-#ARG SILO_URL=https://wci.llnl.gov/sites/wci/files/2021-01/silo-4.10.2.tgz
-
-#ENV SILO_DIR /opt/silo
-
-#WORKDIR $BASE_PATH/parflow/dependencies/silo-src
-#RUN curl -L $SILO_URL | tar --strip-components=1 -xzv && \
-#    ./configure  --prefix=$SILO_DIR --disable-silex --disable-hzip --disable-fpzip && \
-#    make
-
-#USER root
-#RUN make install
-#USER jovyan
-
+USER ubuntu
 
 # -----------------------------------------------------------------------------
 # Install Hypre
@@ -115,7 +101,7 @@ USER jovyan
 
 ARG HYPRE_VERSION=v2.19.0
 
-ENV HYPRE_DIR /opt/hypre
+ENV HYPRE_DIR=/opt/hypre
 
 WORKDIR $BASE_PATH/parflow/dependencies/hypre-src
 RUN git clone https://github.com/hypre-space/hypre.git --single-branch --branch $HYPRE_VERSION
@@ -125,26 +111,14 @@ RUN ./configure --prefix=$HYPRE_DIR --with-MPI
 
 USER root
 RUN make install
-USER jovyan
-
+USER ubuntu
 
 # -----------------------------------------------------------------------------
 # Install Parflow
 # -----------------------------------------------------------------------------
 
-#COPY --chown=ubuntu:ubuntu . $BASE_PATH/parflow/src
-#RUN pip3 install -r $BASE_PATH/parflow/src/pftools/python/requirements_all.txt
-
-
-# ARG PARFLOW_VERSION=master
-# ARG PARFLOW_GIT_URL=
-# RUN git clone                           \
-#     --recursive --single-branch          \
-#     --branch $PARFLOW_VERSION             \
-#     $PARFLOW_GIT_URL                       \
-#     $BASE_PATH/parflow/src
-
-RUN git clone -b master --depth 1 --single-branch https://github.com/parflow/parflow.git $BASE_PATH/parflow/src
+COPY --chown=ubuntu:ubuntu . $BASE_PATH/parflow/src
+RUN pip3 install -r $BASE_PATH/parflow/src/pftools/python/requirements_all.txt
 
 RUN $CMAKE                     \
     -S $BASE_PATH/parflow/src   \
@@ -154,8 +128,6 @@ RUN $CMAKE                     \
     -D PARFLOW_ENABLE_HDF5=TRUE     \
     -D HYPRE_ROOT=$HYPRE_DIR         \
     -D PARFLOW_ENABLE_HYPRE=TRUE      \
-    -D PARFLOW_ENABLE_SILO=TRUE        \
-    -D SILO_ROOT=$SILO_DIR              \
     -D PARFLOW_HAVE_CLM=TRUE             \
     -D PARFLOW_ENABLE_PYTHON=TRUE         \
     -D PARFLOW_ENABLE_TIMING=TRUE          \
@@ -167,9 +139,15 @@ RUN $CMAKE                     \
     -D CURL_LIBRARY=/usr/lib/x86_64-linux-gnu/libcurl.so.4
 
 USER root
+ENV HOME=/root
 RUN $CMAKE --build $BASE_PATH/parflow/build
 RUN $CMAKE --install $BASE_PATH/parflow/build --prefix /opt/parflow
-USER jovyan
+USER ubuntu
+ENV HOME=/home/ubuntu
+
+# -----------------------------------------------------------------------------
+# Python packages for notebooks/utilities
+# -----------------------------------------------------------------------------
 
 RUN pip3 install \
     "subsettools>=2.0.1" \
@@ -179,8 +157,6 @@ RUN pip3 install \
     jupyter \
     ipykernel
 
-ENV PARFLOW_DIR /opt/parflow/
-ENV LD_LIBRARY_PATH=/opt/parflow/lib:$LD_LIBRARY_PATH
-ENV LD_LIBRARY_PATH=/opt/hypre/lib:$LD_LIBRARY_PATH
-ENV LD_LIBRARY_PATH=/usr/include/:$LD_LIBRARY_PATH
-WORKDIR /home/jovyan
+ENV PARFLOW_DIR=/opt/parflow/
+ENV LD_LIBRARY_PATH=/opt/parflow/lib:/opt/hypre/lib:/usr/include/:$LD_LIBRARY_PATH
+WORKDIR /home/ubuntu/
