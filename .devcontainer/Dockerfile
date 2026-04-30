@@ -130,7 +130,6 @@ RUN $CMAKE                     \
     -D HYPRE_ROOT=$HYPRE_DIR         \
     -D PARFLOW_ENABLE_HYPRE=TRUE      \
     -D PARFLOW_HAVE_CLM=TRUE             \
-    -D PARFLOW_ENABLE_PYTHON=TRUE         \
     -D PARFLOW_ENABLE_TIMING=TRUE          \
     -D PARFLOW_AMPS_LAYER=mpi1              \
     -D PARFLOW_AMPS_SEQUENTIAL_IO=TRUE       \
@@ -147,16 +146,20 @@ USER ubuntu
 ENV HOME=/home/ubuntu
 
 # -----------------------------------------------------------------------------
-# Python packages for notebooks/utilities
+# Python virtual environment for notebooks/utilities
 # -----------------------------------------------------------------------------
 
-RUN pip3 install \
-    "subsettools>=2.0.1" \
-    "hf_hydrodata>=1.4.3" \
-    "matplotlib>=3.7.2" \
-    "bokeh>=3.3.0" \
-    jupyter \
-    ipykernel
+ENV VIRTUAL_ENV=/home/ubuntu/.venv
+RUN python3 -m venv "$VIRTUAL_ENV" && \
+    "$VIRTUAL_ENV/bin/pip" install --upgrade pip setuptools wheel && \
+    "$VIRTUAL_ENV/bin/pip" install \
+      "subsettools>=2.0.1" \
+      "hf_hydrodata>=1.4.3" \
+      "matplotlib>=3.7.2" \
+      "bokeh>=3.3.0" \
+      jupyter \
+      ipykernel
+ENV PATH="$VIRTUAL_ENV/bin:$PATH"
 
 ENV PARFLOW_DIR=/opt/parflow/
 ENV LD_LIBRARY_PATH=/opt/parflow/lib:/opt/hypre/lib:/usr/include/:$LD_LIBRARY_PATH
