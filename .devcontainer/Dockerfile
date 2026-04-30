@@ -118,7 +118,6 @@ USER ubuntu
 # -----------------------------------------------------------------------------
 
 COPY --chown=ubuntu:ubuntu . $BASE_PATH/parflow/src
-RUN pip3 install -r $BASE_PATH/parflow/src/pftools/python/requirements_all.txt
 
 RUN $CMAKE                     \
     -S $BASE_PATH/parflow/src   \
