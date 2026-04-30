@@ -117,7 +117,9 @@ USER ubuntu
 # Install Parflow
 # -----------------------------------------------------------------------------
 
-COPY --chown=ubuntu:ubuntu . $BASE_PATH/parflow/src
+RUN git clone -b master --depth 1 --single-branch \
+    https://github.com/parflow/parflow.git \
+    $BASE_PATH/parflow/src
 
 RUN $CMAKE                     \
     -S $BASE_PATH/parflow/src   \
