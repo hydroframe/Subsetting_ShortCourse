@@ -31,8 +31,8 @@ RUN apt-get update && \
         tk-dev && \
     rm -rf /var/lib/apt/lists/*
 
-RUN groupadd -g 1000 ubuntu && \
-    useradd -u 1000 -g ubuntu -m -N -s /bin/bash ubuntu
+RUN getent group ubuntu >/dev/null || groupadd -g 1000 ubuntu && \
+    id -u ubuntu >/dev/null 2>&1 || useradd -u 1000 -g ubuntu -m -N -s /bin/bash ubuntu
 
 USER ubuntu
 WORKDIR /home/ubuntu/
