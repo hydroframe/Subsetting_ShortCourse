@@ -4,5 +4,15 @@
     "dockerfile": "Dockerfile",
     "context": ".."
   },
-  "postCreateCommand": "python -m ipykernel install --user --name subsetting-shortcourse --display-name \"Python (Subsetting ShortCourse)\""
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "ms-python.python",
+        "ms-python.vscode-pylance",
+        "ms-toolsai.jupyter"
+      ]
+    }
+  },
+  "postCreateCommand": "python -m ipykernel install --user --name subsetting-shortcourse --display-name \"Python (Subsetting ShortCourse)\"",
+  "remoteUser": "ubuntu"
 }
