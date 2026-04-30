@@ -162,5 +162,5 @@ RUN python3 -m venv "$VIRTUAL_ENV" && \
 ENV PATH="$VIRTUAL_ENV/bin:$PATH"
 
 ENV PARFLOW_DIR=/opt/parflow/
-ENV LD_LIBRARY_PATH=/opt/parflow/lib:/opt/hypre/lib:/usr/include/:$LD_LIBRARY_PATH
+ENV LD_LIBRARY_PATH=/opt/hdf5/lib:/opt/netcdf/lib:/opt/parflow/lib:/opt/hypre/lib:/usr/include:$LD_LIBRARY_PATH
 WORKDIR /home/ubuntu/
