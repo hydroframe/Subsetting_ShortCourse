@@ -157,6 +157,7 @@ RUN python3 -m venv "$VIRTUAL_ENV" && \
       "hf_hydrodata>=1.4.3" \
       "matplotlib>=3.7.2" \
       "bokeh>=3.3.0" \
+      plotly \
       jupyter \
       ipykernel
 ENV PATH="$VIRTUAL_ENV/bin:$PATH"
