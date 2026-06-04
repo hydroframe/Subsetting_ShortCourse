@@ -155,6 +155,7 @@ RUN python3 -m venv "$VIRTUAL_ENV" && \
     "$VIRTUAL_ENV/bin/pip" install \
       "subsettools>=2.0.1" \
       "hf_hydrodata>=1.4.3" \
+      "priority_flow>=1.0.1" \
       "matplotlib>=3.7.2" \
       "bokeh>=3.3.0" \
       plotly \
