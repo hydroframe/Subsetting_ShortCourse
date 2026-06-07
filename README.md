@@ -7,9 +7,10 @@ To get started:
   - [Register a PIN](https://hydrogen.princeton.edu/pin) for API access
 
 ## Running Exercises
-There are two options we recommend for running the example notebook activities:
-  - Run in a Binder session by clicking the ![Binder](https://mybinder.org/badge_logo.svg) logo at the top of each notebook.
+Here are the options we recommend for running the example notebook activities:
+  - Follow the [instructions]((https://github.com/hydroframe/Subsetting_ShortCourse/blob/main/codespace_instructions.md)) to create a codespace. This is the recommended option for the short course and it will be the easiest to follow along.
   - Follow the [Docker instructions](https://github.com/hydroframe/Subsetting_ShortCourse/blob/main/Docker_instructions.md) for setting up and running in our Docker container.
+  - Run in a Binder session by clicking the ![Binder](https://mybinder.org/badge_logo.svg) logo at the top of each notebook.
 
 If you would like to use these tools in your own virtual environment, you may or may not need a valid ParFlow installation available. The `subsettools` package requires a ParFlow installation while the `hf_hydrodata` package does not. Both `subsettools` and `hf_hydrodata` are Python packages and can be installed with `pip install subsettools` and `pip install hf-hydrodata`. Please see the [ParFlow Installation Guides](https://github.com/parflow/parflow/wiki/ParFlow-Installation-Guides) for how to install ParFlow on your system.
 
