@@ -8,7 +8,7 @@ To get started:
 
 ## Running Exercises
 Here are the options we recommend for running the example notebook activities:
-  - Follow the [instructions]((https://github.com/hydroframe/Subsetting_ShortCourse/blob/main/codespace_instructions.md)) to create a codespace. This is the recommended option for the short course and it will be the easiest to follow along.
+  - Follow the [instructions](https://github.com/hydroframe/Subsetting_ShortCourse/blob/main/codespace_instructions.md) to create a codespace. This is the recommended option for the short course and it will be the easiest to follow along.
   - Follow the [Docker instructions](https://github.com/hydroframe/Subsetting_ShortCourse/blob/main/Docker_instructions.md) for setting up and running in our Docker container.
   - Run in a Binder session by clicking the ![Binder](https://mybinder.org/badge_logo.svg) logo at the top of each notebook.
 
